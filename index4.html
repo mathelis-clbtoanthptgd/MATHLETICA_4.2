@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>17 Phút Sinh Tồn - Bài Toán Cây Cầu Thây Ma</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Nosifer&family=Inter:wght@400;500;600;700&display=swap');
+        
+        .hero-bg {
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.8)), 
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><defs><linearGradient id="night" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:%23001122"/><stop offset="100%" style="stop-color:%23000511"/></linearGradient></defs><rect width="1200" height="600" fill="url(%23night)"/><path d="M0 400 Q300 350 600 380 T1200 400 L1200 600 L0 600 Z" fill="%23000"/><path d="M200 380 Q400 360 600 380 Q800 400 1000 380" stroke="%23444" stroke-width="8" fill="none" opacity="0.6"/><circle cx="100" cy="100" r="3" fill="%23ff4444" opacity="0.8"/><circle cx="150" cy="120" r="2" fill="%23ff4444" opacity="0.6"/><circle cx="1100" cy="150" r="3" fill="%23ff4444" opacity="0.8"/><circle cx="1050" cy="130" r="2" fill="%23ff4444" opacity="0.6"/></svg>');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .creepy-title {
+            font-family: 'Nosifer', cursive;
+            text-shadow: 0 0 20px #ff4444, 0 0 40px #ff0000;
+        }
+        
+        .character-card {
+            transition: all 0.3s ease;
+            cursor: grab;
+        }
+        
+        .character-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(255, 68, 68, 0.3);
+        }
+        
+        .character-card.selected {
+            border: 3px solid #ff4444;
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.5);
+        }
+        
+        .bridge-area {
+            background: linear-gradient(45deg, #2d1810, #1a0f08);
+            border: 2px dashed #8b4513;
+            min-height: 120px;
+        }
+        
+        .lantern {
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #ffd700, #ff8c00);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            cursor: grab;
+            position: relative;
+            box-shadow: 0 0 20px #ffd700;
+        }
+        
+        .lantern::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 10px;
+            background: #8b4513;
+            border-radius: 50%;
+        }
+        
+        .game-timer {
+            font-family: 'Courier New', monospace;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff4444;
+            text-shadow: 0 0 10px #ff4444;
+        }
+        
+        .popup {
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.9);
+        }
+        
+        .dragging {
+            opacity: 0.7;
+            transform: rotate(5deg);
+        }
+        
+        .drop-zone {
+            border: 2px dashed transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .drop-zone.drag-over {
+            border-color: #ff4444;
+            background-color: rgba(255, 68, 68, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <!-- Hero Section -->
+    <section class="hero-bg min-h-screen flex items-center justify-center relative">
+        <div class="absolute top-4 right-4 bg-black bg-opacity-70 p-4 rounded-lg">
+            <div class="text-sm text-gray-300">Thời gian chơi</div>
+            <div id="playTimer" class="text-xl font-bold text-yellow-400">00:00</div>
+        </div>
+        
+        <div class="text-center z-10 px-4">
+            <h1 class="creepy-title text-6xl md:text-8xl mb-4 text-red-500">17 PHÚT</h1>
+            <h2 class="creepy-title text-3xl md:text-5xl mb-6 text-red-400">SINH TON</h2>
+            <p class="text-xl md:text-2xl mb-8 text-gray-300">Bài Toán Cây Cầu Thây Ma</p>
+            <button onclick="scrollToChallenge()" class="bg-red-600 hover:bg-red-700 px-8 py-4 text-xl font-bold rounded-lg transform hover:scale-105 transition-all duration-300 shadow-lg">
+                NHẬN THỬ THÁCH
+            </button>
+        </div>
+    </section>
+
+    <!-- Story Section -->
+    <section class="py-16 bg-gray-800">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-8 text-red-400">Bối Cảnh Nguy Hiểm</h2>
+            <div class="max-w-4xl mx-auto text-lg leading-relaxed text-gray-300 text-center">
+                <p>Bạn và ba người đồng hành đang bị một đám thây ma đột biến truy đuổi. Lối thoát duy nhất là một cây cầu cũ nát. Đồng hồ đang đếm ngược. Bạn chỉ có đúng <span class="text-red-400 font-bold">17 phút</span> để đưa tất cả mọi người qua cầu an toàn trước khi lũ thây ma ập tới. Một quyết định sai lầm, tất cả sẽ kết thúc.</p>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- Characters Section -->
+    <section class="py-16 bg-gray-800">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-12 text-red-400">Bốn Người Sống Sót</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                <div class="character-card bg-gray-700 p-6 rounded-lg text-center">
+                    <div class="text-6xl mb-4">🧑‍💼</div>
+                    <h3 class="text-xl font-bold mb-2 text-yellow-400">Bạn</h3>
+                    <p class="text-red-400 font-bold text-lg">1 phút</p>
+                </div>
+                <div class="character-card bg-gray-700 p-6 rounded-lg text-center">
+                    <div class="text-6xl mb-4">👨‍💻</div>
+                    <h3 class="text-xl font-bold mb-2 text-yellow-400">Trợ lý</h3>
+                    <p class="text-red-400 font-bold text-lg">2 phút</p>
+                </div>
+                <div class="character-card bg-gray-700 p-6 rounded-lg text-center">
+                    <div class="text-6xl mb-4">👷‍♂️</div>
+                    <h3 class="text-xl font-bold mb-2 text-yellow-400">Lao công</h3>
+                    <p class="text-red-400 font-bold text-lg">5 phút</p>
+                </div>
+                <div class="character-card bg-gray-700 p-6 rounded-lg text-center">
+                    <div class="text-6xl mb-4">👨‍🏫</div>
+                    <h3 class="text-xl font-bold mb-2 text-yellow-400">Giáo sư</h3>
+                    <p class="text-red-400 font-bold text-lg">10 phút</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rules Section -->
+    <section class="py-16 bg-gray-900">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-12 text-red-400">Luật Sinh Tồn</h2>
+            <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="flex items-center space-x-4 bg-gray-800 p-6 rounded-lg">
+                    <div class="text-4xl">⏰</div>
+                    <div>
+                        <h3 class="font-bold text-lg text-yellow-400">Giới hạn 17 phút</h3>
+                        <p class="text-gray-300">Tất cả phải qua cầu trong vòng 17 phút</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4 bg-gray-800 p-6 rounded-lg">
+                    <div class="text-4xl">👥</div>
+                    <div>
+                        <h3 class="font-bold text-lg text-yellow-400">Tối đa 2 người</h3>
+                        <p class="text-gray-300">Cầu chỉ chịu được 2 người cùng lúc</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4 bg-gray-800 p-6 rounded-lg">
+                    <div class="text-4xl">🏮</div>
+                    <div>
+                        <h3 class="font-bold text-lg text-yellow-400">Phải có đèn</h3>
+                        <p class="text-gray-300">Bất kỳ ai qua cầu đều phải cầm theo đèn lồng</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4 bg-gray-800 p-6 rounded-lg">
+                    <div class="text-4xl">🐌</div>
+                    <div>
+                        <h3 class="font-bold text-lg text-yellow-400">Theo người chậm nhất</h3>
+                        <p class="text-gray-300">Thời gian tính theo người chậm hơn</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Challenge Section -->
+    <section id="challenge" class="py-16 bg-gray-800">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-8 text-red-400">Kế Hoạch Của Bạn Là Gì?</h2>
+            
+            <!-- Game Timer -->
+            <div class="text-center mb-8">
+                <div class="inline-block bg-black bg-opacity-70 p-6 rounded-lg">
+                    <div class="text-sm text-gray-300 mb-2">Thời gian còn lại</div>
+                    <div id="gameTimer" class="game-timer">17:00</div>
+                    <div class="text-sm text-gray-400 mt-2">Lượt: <span id="turnCounter">0</span></div>
+                </div>
+            </div>
+
+            <!-- Game Area -->
+            <div class="max-w-6xl mx-auto">
+                <!-- Left Side (Start) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                    <div class="bg-gray-700 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold mb-4 text-center text-yellow-400">Bên Này Cầu</h3>
+                        <div id="leftSide" class="drop-zone min-h-64 p-4 rounded-lg bg-gray-600">
+                            <!-- Characters will be here initially -->
+                            <div class="character-piece" data-name="Bạn" data-time="1" draggable="true">
+                                <div class="bg-blue-600 p-3 rounded-lg mb-2 cursor-grab text-center">
+                                    <div class="text-2xl">🧑‍💼</div>
+                                    <div class="text-sm font-bold">Bạn (1p)</div>
+                                </div>
+                            </div>
+                            <div class="character-piece" data-name="Trợ lý" data-time="2" draggable="true">
+                                <div class="bg-green-600 p-3 rounded-lg mb-2 cursor-grab text-center">
+                                    <div class="text-2xl">👨‍💻</div>
+                                    <div class="text-sm font-bold">Trợ lý (2p)</div>
+                                </div>
+                            </div>
+                            <div class="character-piece" data-name="Lao công" data-time="5" draggable="true">
+                                <div class="bg-orange-600 p-3 rounded-lg mb-2 cursor-grab text-center">
+                                    <div class="text-2xl">👷‍♂️</div>
+                                    <div class="text-sm font-bold">Lao công (5p)</div>
+                                </div>
+                            </div>
+                            <div class="character-piece" data-name="Giáo sư" data-time="10" draggable="true">
+                                <div class="bg-purple-600 p-3 rounded-lg mb-2 cursor-grab text-center">
+                                    <div class="text-2xl">👨‍🏫</div>
+                                    <div class="text-sm font-bold">Giáo sư (10p)</div>
+                                </div>
+                            </div>
+                            <!-- Lantern starts here -->
+                            <div id="lantern" class="lantern mt-4 mx-auto" draggable="true" title="Đèn lồng - Bắt buộc để qua cầu"></div>
+                        </div>
+                    </div>
+
+                    <!-- Bridge Area -->
+                    <div class="bg-gray-900 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold mb-4 text-center text-red-400">Cây Cầu</h3>
+                        <div id="bridge" class="bridge-area drop-zone p-4 rounded-lg flex flex-col items-center justify-center">
+                            <div class="text-4xl mb-2">🌉</div>
+                            <div class="text-sm text-gray-400 text-center">Kéo nhân vật và đèn lồng vào đây</div>
+                            <div class="text-xs text-gray-500 mt-2">Tối đa 2 người + đèn lồng</div>
+                        </div>
+                        <div class="mt-4 flex justify-center">
+                            <button id="crossBridge" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed">
+                                Qua Cầu
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Side (End) -->
+                    <div class="bg-gray-700 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold mb-4 text-center text-green-400">Bên Kia Cầu (An Toàn)</h3>
+                        <div id="rightSide" class="drop-zone min-h-64 p-4 rounded-lg bg-gray-600">
+                            <div class="text-center text-gray-400 text-sm">Đưa tất cả mọi người đến đây</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Controls -->
+                <div class="text-center mb-8">
+                    <button id="resetGame" class="bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg font-bold mr-4">
+                        Bắt Đầu Lại
+                    </button>
+                </div>
+
+                <!-- Game Log -->
+                <div class="bg-gray-900 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold mb-4 text-yellow-400">Nhật Ký Game</h3>
+                    <div id="gameLog" class="text-sm text-gray-300 max-h-40 overflow-y-auto">
+                        <div class="text-gray-500">Game bắt đầu. Hãy lập kế hoạch để đưa tất cả mọi người qua cầu trong 17 phút!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Success Popup -->
+    <div id="successPopup" class="fixed inset-0 popup hidden items-center justify-center z-50">
+        <div class="bg-gray-800 p-8 rounded-lg max-w-md mx-4 text-center border-2 border-green-500">
+            <div class="text-6xl mb-4">🎉</div>
+            <h2 class="text-3xl font-bold text-green-400 mb-4">Chúc Mừng!</h2>
+            <p class="text-lg mb-4">Bạn đã cứu được tất cả mọi người!</p>
+            <p class="text-yellow-400 font-bold text-xl mb-6">Thời gian hoàn thành: <span id="completionTime"></span></p>
+            <button onclick="closeSuccessPopup()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-bold">
+                Tuyệt Vời!
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Over Popup -->
+    <div id="gameOverPopup" class="fixed inset-0 popup hidden items-center justify-center z-50">
+        <div class="bg-gray-800 p-8 rounded-lg max-w-md mx-4 text-center border-2 border-red-500">
+            <div class="text-6xl mb-4">💀</div>
+            <h2 class="text-3xl font-bold text-red-400 mb-4">Game Over!</h2>
+            <p id="gameOverMessage" class="text-lg mb-6">Thời gian đã hết! Thây ma đã bắt kịp...</p>
+            <button onclick="resetGame()" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg font-bold">
+                Thử Lại
+            </button>
+        </div>
+    </div>
+
+
+
+    <script>
+        let gameState = {
+            timeRemaining: 17 * 60, // 17 minutes in seconds
+            turnCount: 0,
+            gameStarted: false,
+            playStartTime: null,
+            gameInterval: null,
+            playInterval: null
+        };
+
+        let selectedCharacters = [];
+        let hasLantern = false;
+
+        // Initialize game
+        function initGame() {
+            updateTimerDisplay();
+            updatePlayTimer();
+            setupDragAndDrop();
+            updateButtons();
+            
+            // Start play timer
+            gameState.playStartTime = Date.now();
+            gameState.playInterval = setInterval(updatePlayTimer, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(gameState.timeRemaining / 60);
+            const seconds = gameState.timeRemaining % 60;
+            document.getElementById('gameTimer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('turnCounter').textContent = gameState.turnCount;
+        }
+
+        function updatePlayTimer() {
+            if (!gameState.playStartTime) return;
+            
+            const elapsed = Math.floor((Date.now() - gameState.playStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('playTimer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function setupDragAndDrop() {
+            // Setup drag for characters and lantern
+            document.querySelectorAll('.character-piece, #lantern').forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragend', handleDragEnd);
+            });
+
+            // Setup drop zones
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.addEventListener('dragover', handleDragOver);
+                zone.addEventListener('drop', handleDrop);
+                zone.addEventListener('dragenter', handleDragEnter);
+                zone.addEventListener('dragleave', handleDragLeave);
+            });
+        }
+
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.id || e.target.closest('.character-piece').dataset.name);
+            e.target.classList.add('dragging');
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            e.target.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.target.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.target.classList.remove('drag-over');
+            
+            const data = e.dataTransfer.getData('text/plain');
+            const draggedElement = document.getElementById(data) || 
+                                 document.querySelector(`[data-name="${data}"]`);
+            
+            if (draggedElement && e.target.classList.contains('drop-zone')) {
+                // Store original position before moving to bridge
+                if (e.target.id === 'bridge' && draggedElement.classList.contains('character-piece')) {
+                    const leftSide = document.getElementById('leftSide');
+                    const rightSide = document.getElementById('rightSide');
+                    
+                    // Determine where the character came from
+                    if (leftSide.contains(draggedElement)) {
+                        draggedElement.dataset.origin = 'left';
+                    } else if (rightSide.contains(draggedElement)) {
+                        draggedElement.dataset.origin = 'right';
+                    }
+                }
+                
+                e.target.appendChild(draggedElement);
+                updateBridgeSelection();
+                updateButtons();
+            }
+        }
+
+        function updateBridgeSelection() {
+            const bridge = document.getElementById('bridge');
+            const charactersOnBridge = bridge.querySelectorAll('.character-piece');
+            const lanternOnBridge = bridge.querySelector('#lantern');
+            
+            selectedCharacters = Array.from(charactersOnBridge).map(char => ({
+                name: char.dataset.name,
+                time: parseInt(char.dataset.time)
+            }));
+            
+            hasLantern = !!lanternOnBridge;
+        }
+
+        function updateButtons() {
+            const crossBtn = document.getElementById('crossBridge');
+            
+            // Can cross if: has lantern and has 1-2 characters
+            const canCross = hasLantern && selectedCharacters.length > 0 && selectedCharacters.length <= 2;
+            crossBtn.disabled = !canCross;
+        }
+
+        function crossBridge() {
+            if (!hasLantern || selectedCharacters.length === 0 || selectedCharacters.length > 2) {
+                addToLog("❌ Không thể qua cầu: Cần đèn lồng và 1-2 nhân vật!");
+                return;
+            }
+
+            const maxTime = Math.max(...selectedCharacters.map(c => c.time));
+            gameState.timeRemaining -= maxTime * 60; // Convert minutes to seconds
+            gameState.turnCount++;
+
+            const bridge = document.getElementById('bridge');
+            const leftSide = document.getElementById('leftSide');
+            const rightSide = document.getElementById('rightSide');
+            
+            // Determine destination based on stored origin data
+            const charactersOnBridge = bridge.querySelectorAll('.character-piece');
+            let destination, direction;
+            
+            // Check the origin of the first character (all should have same origin for this move)
+            if (charactersOnBridge.length > 0) {
+                const firstCharOrigin = charactersOnBridge[0].dataset.origin;
+                
+                if (firstCharOrigin === 'left') {
+                    destination = rightSide;
+                    direction = "➡️";
+                } else if (firstCharOrigin === 'right') {
+                    destination = leftSide;
+                    direction = "⬅️";
+                } else {
+                    // Default case - if no origin data, assume going right
+                    destination = rightSide;
+                    direction = "➡️";
+                }
+            } else {
+                // Fallback
+                destination = rightSide;
+                direction = "➡️";
+            }
+            
+            // Move characters to destination and clear origin data
+            charactersOnBridge.forEach(char => {
+                delete char.dataset.origin; // Clear origin data
+                destination.appendChild(char);
+            });
+            
+            // Move lantern to destination
+            const lantern = document.getElementById('lantern');
+            destination.appendChild(lantern);
+
+            const charNames = selectedCharacters.map(c => c.name).join(', ');
+            addToLog(`${direction} Lượt ${gameState.turnCount}: ${charNames} qua cầu (${maxTime} phút)`);
+
+            selectedCharacters = [];
+            hasLantern = false;
+            updateTimerDisplay();
+            updateButtons();
+            checkGameStatus();
+        }
+
+
+
+        function checkGameStatus() {
+            // Check if time is up
+            if (gameState.timeRemaining <= 0) {
+                // When time is up, check if everyone is safe
+                const rightSideChars = document.getElementById('rightSide').querySelectorAll('.character-piece');
+                if (rightSideChars.length === 4) {
+                    showSuccess(); // All characters are safe - SUCCESS!
+                } else {
+                    showGameOver(); // Some characters still in danger - FAILURE!
+                }
+                return;
+            }
+
+            // Check if all characters are on the right side before time runs out
+            const rightSideChars = document.getElementById('rightSide').querySelectorAll('.character-piece');
+            if (rightSideChars.length === 4) {
+                showSuccess(); // Early completion - SUCCESS!
+                return;
+            }
+        }
+
+        function showSuccess() {
+            const playTime = Math.floor((Date.now() - gameState.playStartTime) / 1000);
+            const minutes = Math.floor(playTime / 60);
+            const seconds = playTime % 60;
+            const timeUsed = 17 * 60 - gameState.timeRemaining;
+            const gameMinutes = Math.floor(timeUsed / 60);
+            const gameSeconds = timeUsed % 60;
+            
+            document.getElementById('completionTime').textContent = 
+                `${gameMinutes}:${gameSeconds.toString().padStart(2, '0')} (Chơi trong ${minutes}:${seconds.toString().padStart(2, '0')})`;
+            document.getElementById('successPopup').classList.remove('hidden');
+            document.getElementById('successPopup').classList.add('flex');
+            
+            clearInterval(gameState.playInterval);
+        }
+
+        function showGameOver() {
+            // Check how many people are still in danger
+            const leftSideChars = document.getElementById('leftSide').querySelectorAll('.character-piece');
+            const bridgeChars = document.getElementById('bridge').querySelectorAll('.character-piece');
+            const totalInDanger = leftSideChars.length + bridgeChars.length;
+            
+            let message = "Thời gian đã hết! ";
+            if (totalInDanger > 0) {
+                message += `Còn ${totalInDanger} người chưa thoát khỏi nguy hiểm. Thây ma đã bắt kịp...`;
+            } else {
+                message += "Thây ma đã bắt kịp...";
+            }
+            
+            document.getElementById('gameOverMessage').textContent = message;
+            document.getElementById('gameOverPopup').classList.remove('hidden');
+            document.getElementById('gameOverPopup').classList.add('flex');
+            
+            clearInterval(gameState.playInterval);
+        }
+
+        function closeSuccessPopup() {
+            document.getElementById('successPopup').classList.add('hidden');
+            document.getElementById('successPopup').classList.remove('flex');
+        }
+
+
+
+        function resetGame() {
+            // Reset game state
+            gameState = {
+                timeRemaining: 17 * 60,
+                turnCount: 0,
+                gameStarted: false,
+                playStartTime: Date.now(),
+                gameInterval: null,
+                playInterval: null
+            };
+
+            // Clear intervals
+            if (gameState.playInterval) clearInterval(gameState.playInterval);
+            
+            // Reset character positions
+            const leftSide = document.getElementById('leftSide');
+            const rightSide = document.getElementById('rightSide');
+            const bridge = document.getElementById('bridge');
+
+            // Move all characters back to left side
+            document.querySelectorAll('.character-piece').forEach(char => {
+                leftSide.appendChild(char);
+            });
+
+            // Move lantern back to left side
+            const lantern = document.getElementById('lantern');
+            leftSide.appendChild(lantern);
+
+            // Clear selections
+            selectedCharacters = [];
+            hasLantern = false;
+
+            // Reset UI
+            updateTimerDisplay();
+            updateButtons();
+            document.getElementById('gameLog').innerHTML = 
+                '<div class="text-gray-500">Game bắt đầu. Hãy lập kế hoạch để đưa tất cả mọi người qua cầu trong 17 phút!</div>';
+
+            // Hide popups
+            document.getElementById('successPopup').classList.add('hidden');
+            document.getElementById('successPopup').classList.remove('flex');
+            document.getElementById('gameOverPopup').classList.add('hidden');
+            document.getElementById('gameOverPopup').classList.remove('flex');
+
+            // Restart play timer
+            gameState.playInterval = setInterval(updatePlayTimer, 1000);
+        }
+
+        function addToLog(message) {
+            const log = document.getElementById('gameLog');
+            const entry = document.createElement('div');
+            entry.textContent = message;
+            entry.className = 'mb-1';
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function scrollToChallenge() {
+            document.getElementById('challenge').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Event listeners
+        document.getElementById('crossBridge').addEventListener('click', crossBridge);
+        document.getElementById('resetGame').addEventListener('click', resetGame);
+
+        // Initialize game when page loads
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
